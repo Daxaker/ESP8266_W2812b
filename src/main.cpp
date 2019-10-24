@@ -1,18 +1,28 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
+#include <SPI.h>
 #include <credential.h>
-#include <Adafruit_NeoPixel.h>
+#include <Adafruit_NeoMatrix.h>
+#include <JeVe_EasyOTA.h>
 
 #define MQTT_MAX_PACKET_SIZE 1024
 
+#define ESP_HOSTNAME "esp"
+
+EasyOTA OTA(ESP_HOSTNAME);
 WiFiClient espClient;
 PubSubClient client(espClient);
 
 #define LED_PIN 4
-#define LED_COUNT 256
+#define MATRIX_WIDTH 16
+#define MATRIX_HEIGHT 16
 
-Adafruit_NeoPixel matrix(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoMatrix matrix(MATRIX_WIDTH,MATRIX_HEIGHT,LED_PIN,
+  NEO_MATRIX_TOP     + NEO_MATRIX_LEFT +
+  NEO_MATRIX_COLUMNS + NEO_MATRIX_ZIGZAG,
+  NEO_GRB            + NEO_KHZ800);
+//Adafruit_NeoPixel matrix(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 #ifndef CREDENTIALS
 const char* ssid = "....";
@@ -25,14 +35,23 @@ long lastMsg = 0;
 char msg[50];
 int value = 0;
 
+const uint16_t colors[] = {
+  matrix.Color(255, 0, 0), matrix.Color(0, 255, 0), matrix.Color(0, 0, 255) };
+
 void setXYColor(uint8_t x, uint8_t y, uint32_t c){
   uint8_t n = (16 * x) + (x % 2 == 0 ? y : (15 - y));
   matrix.setPixelColor(n, c);
 }
 
 void setXYColor(uint8_t x, uint8_t y, uint8_t r, uint8_t g, uint8_t b){
-  uint8_t n = (16 * x) + (x % 2 == 0 ? y : (15 - y));
-  matrix.setPixelColor(n, r, g, b);
+  // uint8_t n = (16 * x) + (x % 2 == 0 ? y : (15 - y));
+  // matrix.setPixelColor(n, r, g, b);
+  uint16_t color = matrix.Color(r,g,b);
+  matrix.drawPixel(x,y, color);
+}
+
+void OnOTAMsg(const String& message, int line) {
+    Serial.println(message);
 }
 
 void setup_wifi() {
@@ -51,6 +70,9 @@ void setup_wifi() {
   Serial.println();
   Serial.print("Connected, IP address: ");
   Serial.println(WiFi.localIP());
+
+  OTA.onMessage(OnOTAMsg);
+  OTA.addAP(ssid, passwd);
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
@@ -119,25 +141,45 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
 }
 
+int x    = matrix.width();
+int pass = 0;
+void printText(const char* text){
+  String s(text);
+  matrix.fillScreen(0);
+  matrix.setCursor(x, 0);
+  matrix.print(s);
+  if(--x < -36) {
+    x = matrix.width();
+    if(++pass >= 3) pass = 0;
+    matrix.setTextColor(colors[pass]);
+  }
+  matrix.show();
+}
+
 void setup() {
   pinMode(D4, OUTPUT);     // Initialize the BUILTIN_LED pin as an output
   Serial.begin(115200);
   setup_wifi();
+  matrix.begin();
+  matrix.setTextWrap(false);
+  matrix.setTextColor(colors[0]);
   client.setServer(mqtt_server, port);
   client.setCallback(callback);
-  matrix.begin();
 }
 
 void reconnect() {
   // Loop until we're reconnected
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
+    printText("Attempting MQTT connection...");
     // Create a random client ID
     String clientId = "ESP8266Client-";
     clientId += String(random(0xffff), HEX);
     // Attempt to connect
     if (client.connect(clientId.c_str())) {
       Serial.println("connected");
+      printText("connected");
+
       // Once connected, publish an announcement...
       client.publish("outTopic", "hello world");
       // ... and resubscribe
@@ -155,8 +197,9 @@ void reconnect() {
 }
 
 void loop() {
- if (!client.connected()) {
-    reconnect();
-  }
-  client.loop();
+    if (!client.connected()) {
+        reconnect();
+    }
+    OTA.loop();
+    client.loop();
 }
