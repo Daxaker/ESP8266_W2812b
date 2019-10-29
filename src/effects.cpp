@@ -424,31 +424,31 @@ void starfallRoutine() {
         && (random(0, STAR_DENSE) == 0)
         && getPixColorXY(0, i + 1) == 0
         && getPixColorXY(0, i - 1) == 0)
-      drawPixelXY(0, i, CRGB(CHSV(random(0, 200), SATURATION, 255)));
+      drawPixelXY(0, i, CHSV(random(0, 200), SATURATION, 255));
   }
   for (byte i = 0; i < MATRIX_WIDTH / 2; i++) {
     if (getPixColorXY(i, MATRIX_HEIGHT - 1) == 0
         && (random(0, STAR_DENSE) == 0)
         && getPixColorXY(i + 1, MATRIX_HEIGHT - 1) == 0
         && getPixColorXY(i - 1, MATRIX_HEIGHT - 1) == 0)
-      drawPixelXY(i, MATRIX_HEIGHT - 1, CRGB(CHSV(random(0, 200), SATURATION, 255)));
-
+      drawPixelXY(i, MATRIX_HEIGHT - 1, CHSV(random(0, 200), SATURATION, 255));
   }
 
   // сдвигаем по диагонали
   for (byte y = 0; y < MATRIX_HEIGHT - 1; y++) {
     for (byte x = MATRIX_WIDTH - 1; x > 0; x--) {
       drawPixelXY(x, y, getPixColorXY(x - 1, y + 1));
+      fadePixel(x,y, TAIL_STEP);
     }
   }
 
   // уменьшаем яркость левой и верхней линии, формируем "хвосты"
-  for (byte i = MATRIX_HEIGHT / 2; i < MATRIX_HEIGHT; i++) {
-    fadePixel(0, i, TAIL_STEP);
-  }
-  for (byte i = 0; i < MATRIX_WIDTH / 2; i++) {
-    fadePixel(i, MATRIX_HEIGHT - 1, TAIL_STEP);
-  }
+  // for (byte i = MATRIX_HEIGHT / 2; i < MATRIX_HEIGHT; i++) {
+  //   fadePixel(0, i, TAIL_STEP);
+  // }
+  // for (byte i = 0; i < MATRIX_WIDTH / 2; i++) {
+  //   fadePixel(i, MATRIX_HEIGHT - 1, TAIL_STEP);
+  // }
 }
 
 // рандомные гаснущие вспышки

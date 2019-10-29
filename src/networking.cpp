@@ -55,6 +55,7 @@ void reconnect_mqtt() {
       client.subscribe("ledMatrix/blob");
       client.subscribe("ledMatrix/toggleFX");
       client.subscribe("ledMatrix/changeFX");
+      client.subscribe("ledMatrix/setFX");
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());

@@ -1,7 +1,9 @@
+#include <routine.h>
 #include <ledMatrix.h>
 #include <effects.h>
 #include <Timer.h>
 
+#define NEXT_ROUTINE_BUTTON 5
 #define D_EFFECT_SPEED 80
 #define MODES_AMOUNT 9   // количество кастомных режимов (которые переключаются сами или кнопкой)
 
@@ -29,6 +31,10 @@ void customModes() {
       break;
   }
 }
+ButtonHandler nextButton;
+void initRoutines(){
+  nextButton.setPin(NEXT_ROUTINE_BUTTON);
+}
 
 void nextRoutine() {
   thisMode++;
@@ -45,12 +51,25 @@ void prevRoutine() {
   FastLED.show();
 }
 
-long _timer = millis();
-long _interval = D_EFFECT_SPEED;
+void buttonHandler() {
+  if(nextButton.isClicked()) {
+    nextRoutine();
+  }
+}
+
+void setRoutine(uint8_t routineId){
+  thisMode = routineId;
+  thisMode = (routineId < 0 || routineId >= MODES_AMOUNT) 
+    ? 0 
+    : routineId;
+  loadingFlag = true;
+  FastLED.clear();
+  FastLED.show();
+}
+
 void loopRoutine(){
-  //if ((long)millis() - _timer >= _interval) {
-    //_timer = millis();
   if(timer.isReady()) {
+    buttonHandler();
     customModes();
     loadingFlag = false;
     FastLED.show();
