@@ -3,16 +3,19 @@
 
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
-#include <credential.h>
-#include <PubSubClient.h>
 
+#include <PubSubClient.h>
 #include <JeVe_EasyOTA.h>
 
+#ifdef EXTERNAL_CREDENTIALS
+#include <credential.h>
+#else
 #ifndef CREDENTIALS_h
-#define SSID = "dx";
-#define PASSWD = "blablabla";
-#define MQTT_SERVER = "192.168.0.101";
-#define PORT = 1883;
+#define SSID "..."
+#define PASSWD "..."
+#define MQTT_SERVER "192.168.0.101"
+#define PORT 1883
+#endif
 #endif
 #define MQTT_MAX_PACKET_SIZE 1024
 
